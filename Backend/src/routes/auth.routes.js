@@ -1,6 +1,6 @@
 const express = require('express');
 const { auth } = require('../middleware/auth.middleware');
-const validateRequest = require('../middleware/validation.middleware');
+const { validateRequest } = require('../middleware/validation.middleware');
 const { registerSchema, loginSchema, otpVerificationSchema } = require('../utils/validation.schemas');
 const {
   register,

@@ -24,7 +24,7 @@ const classSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Quiz'
   }],
-  blockedStudents: [{
+  blocked: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }]

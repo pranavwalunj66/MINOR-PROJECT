@@ -33,24 +33,29 @@ const createClassSchema = Joi.object({
   enrollmentKey: Joi.string().required().min(6)
 });
 
+const enrollSchema = Joi.object({
+  classId: Joi.string().required(),
+  enrollmentKey: Joi.string().required()
+});
+
 const createQuizSchema = Joi.object({
-  title: Joi.string().required().trim(),
-  description: Joi.string().trim(),
+  title: Joi.string().required().trim().max(100),
+  description: Joi.string().trim().max(500).allow('', null),
   classIds: Joi.array().items(Joi.string().hex().length(24)).min(1).required(),
   questions: Joi.array().items(
     Joi.object({
-      text: Joi.string().required(),
+      text: Joi.string().required().max(1000),
       options: Joi.array().items(
         Joi.object({
-          text: Joi.string().required(),
+          text: Joi.string().required().max(500),
           isCorrect: Joi.boolean().required()
         })
-      ).min(2).max(5).required()
+      ).min(2).required()
     })
   ).min(1).max(50).required(),
-  timeLimit: Joi.number().integer().min(1).required(),
-  scheduledFor: Joi.date().greater('now').required(),
-  passingCriteria: Joi.number().min(0).max(100).optional()
+  timeLimit: Joi.number().integer().min(1).max(180).required(),
+  windowStart: Joi.date().iso().required(),
+  windowEnd: Joi.date().iso().greater(Joi.ref('windowStart')).required()
 });
 
 module.exports = {
@@ -58,5 +63,6 @@ module.exports = {
   loginSchema,
   otpVerificationSchema,
   createClassSchema,
+  enrollSchema,
   createQuizSchema
 };

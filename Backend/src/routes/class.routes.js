@@ -1,6 +1,6 @@
 const express = require('express');
 const { auth, teacherAuth, studentAuth } = require('../middleware/auth.middleware');
-const validateRequest = require('../middleware/validation.middleware');
+const { validateRequest } = require('../middleware/validation.middleware');
 const { createClassSchema } = require('../utils/validation.schemas');
 const {
   createClass,

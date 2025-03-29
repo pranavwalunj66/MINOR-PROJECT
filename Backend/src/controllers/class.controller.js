@@ -40,7 +40,7 @@ const getTeacherClasses = async (req, res) => {
     const classes = await Class.find({ teacher: req.user._id })
       .populate('students', 'name email prn department')
       .populate('quizzes', 'title scheduledFor status')
-      .select('-blockedStudents');
+      .select('-blocked');
 
     res.json({ classes });
   } catch (error) {
@@ -60,7 +60,7 @@ const joinClass = async (req, res) => {
     }
 
     // Check if student is blocked
-    if (targetClass.blockedStudents.includes(req.user._id)) {
+    if (targetClass.blocked.includes(req.user._id)) {
       return res.status(403).json({ message: 'You are blocked from this class' });
     }
 
@@ -90,11 +90,11 @@ const getStudentClasses = async (req, res) => {
   try {
     const classes = await Class.find({
       students: req.user._id,
-      blockedStudents: { $ne: req.user._id }
+      blocked: { $ne: req.user._id }
     })
       .populate('teacher', 'name email')
       .populate('quizzes', 'title scheduledFor status')
-      .select('-students -blockedStudents');
+      .select('-students -blocked');
 
     res.json({ classes });
   } catch (error) {
@@ -113,7 +113,7 @@ const getClassDetails = async (req, res) => {
       teacher: req.user._id
     })
       .populate('students', 'name email prn department')
-      .populate('blockedStudents', 'name email prn')
+      .populate('blocked', 'name email prn')
       .populate('quizzes', 'title scheduledFor status');
 
     if (!classDetails) {
@@ -155,12 +155,12 @@ const toggleStudentBlock = async (req, res) => {
       targetClass.students = targetClass.students.filter(
         id => id.toString() !== studentId
       );
-      if (!targetClass.blockedStudents.includes(studentId)) {
-        targetClass.blockedStudents.push(studentId);
+      if (!targetClass.blocked.includes(studentId)) {
+        targetClass.blocked.push(studentId);
       }
     } else if (action === 'unblock') {
       // Remove from blocked and add to students
-      targetClass.blockedStudents = targetClass.blockedStudents.filter(
+      targetClass.blocked = targetClass.blocked.filter(
         id => id.toString() !== studentId
       );
       if (!targetClass.students.includes(studentId)) {

@@ -56,6 +56,8 @@ const userSchema = new mongoose.Schema({
     default: 0
   },
   lastOtpTime: Date,
+  tempOTP: String,
+  tempOTPExpires: Date,
   refreshToken: String,
   blocked: [{
     type: mongoose.Schema.Types.ObjectId,

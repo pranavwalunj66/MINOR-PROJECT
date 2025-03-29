@@ -42,14 +42,19 @@ const quizSchema = new mongoose.Schema({
     required: true,
     min: 1
   },
-  scheduledFor: {
+  windowStart: {
     type: Date,
     required: true
   },
-  passingCriteria: {
-    type: Number,
-    min: 0,
-    max: 100
+  windowEnd: {
+    type: Date,
+    required: true,
+    validate: {
+      validator: function(value) {
+        return value > this.windowStart;
+      },
+      message: 'Window end time must be after window start time'
+    }
   },
   status: {
     type: String,
@@ -60,6 +65,14 @@ const quizSchema = new mongoose.Schema({
     student: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User'
+    },
+    startTime: {
+      type: Date,
+      required: true
+    },
+    endTime: {
+      type: Date,
+      required: true
     },
     answers: [{
       questionIndex: Number,
@@ -80,6 +93,19 @@ const quizSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+// Update quiz status based on current time
+quizSchema.methods.updateStatus = function() {
+  const now = new Date();
+
+  if (now < this.windowStart) {
+    this.status = 'scheduled';
+  } else if (now >= this.windowStart && now <= this.windowEnd) {
+    this.status = 'active';
+  } else {
+    this.status = 'completed';
+  }
+};
 
 // Virtual for getting the total number of questions
 quizSchema.virtual('questionCount').get(function() {
