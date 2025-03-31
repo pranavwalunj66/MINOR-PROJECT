@@ -68,7 +68,8 @@ const createQuiz = async (req, res) => {
 const getQuizDetails = async (req, res) => {
   try {
     const quiz = await Quiz.findById(req.params.quizId)
-      .populate('classes', 'name');
+      .populate('classes', 'name')
+      .populate('attempts.student', 'name email');
 
     if (!quiz) {
       return res.status(404).json({ message: 'Quiz not found' });
@@ -438,7 +439,7 @@ const generateQuizReport = async (req, res) => {
   try {
     const quiz = await Quiz.findById(req.params.quizId)
       .populate('teacher', 'name email')
-      .populate('attempts.student', 'name email prn department');
+      .populate('attempts.student', 'name email department');
 
     if (!quiz) {
       return res.status(404).json({ message: 'Quiz not found' });
@@ -487,6 +488,110 @@ const generateQuizReport = async (req, res) => {
   }
 };
 
+// Get quiz leaderboard with class-wise rankings
+const getQuizLeaderboard = async (req, res) => {
+  try {
+    const quiz = await Quiz.findById(req.params.quizId)
+      .populate('attempts.student', 'name email department')
+      .populate('classes', 'name');
+
+    if (!quiz) {
+      return res.status(404).json({ message: 'Quiz not found' });
+    }
+
+    // Get all classes with enrolled students
+    const classes = await Class.find({
+      _id: { $in: quiz.classes }
+    }).populate('students', 'name email department');
+
+    // Create a map of student IDs to their classes
+    const studentClassMap = new Map();
+    classes.forEach(cls => {
+      cls.students.forEach(student => {
+        studentClassMap.set(student._id.toString(), {
+          classId: cls._id.toString(),
+          className: cls.name
+        });
+      });
+    });
+
+    // Get all attempts with scores and organize by class
+    const classLeaderboards = new Map();
+    quiz.classes.forEach(cls => {
+      classLeaderboards.set(cls._id.toString(), {
+        className: cls.name,
+        rankings: []
+      });
+    });
+
+    // Process all attempts
+    quiz.attempts
+      .filter(attempt => attempt.submittedAt && attempt.student) // Only include submitted attempts
+      .forEach(attempt => {
+        const studentId = attempt.student._id.toString();
+        const studentClass = studentClassMap.get(studentId);
+        
+        if (studentClass) {
+          const leaderboardEntry = {
+            student: {
+              name: attempt.student.name,
+              email: attempt.student.email,
+              department: attempt.student.department
+            },
+            score: attempt.score,
+            totalQuestions: quiz.questions.length,
+            submittedAt: attempt.submittedAt,
+            timeTaken: Math.round((new Date(attempt.submittedAt) - new Date(attempt.startTime)) / 1000) // in seconds
+          };
+
+          const classLeaderboard = classLeaderboards.get(studentClass.classId);
+          if (classLeaderboard) {
+            classLeaderboard.rankings.push(leaderboardEntry);
+          }
+        }
+      });
+
+    // Sort rankings for each class
+    classLeaderboards.forEach(leaderboard => {
+      leaderboard.rankings.sort((a, b) => {
+        // Sort by score (descending) and then by submission time (ascending)
+        if (b.score !== a.score) {
+          return b.score - a.score;
+        }
+        return new Date(a.submittedAt) - new Date(b.submittedAt);
+      });
+    });
+
+    // Calculate overall rankings
+    const overallRankings = Array.from(classLeaderboards.values())
+      .flatMap(leaderboard => leaderboard.rankings)
+      .sort((a, b) => {
+        if (b.score !== a.score) {
+          return b.score - a.score;
+        }
+        return new Date(a.submittedAt) - new Date(b.submittedAt);
+      });
+
+    res.json({
+      quizTitle: quiz.title,
+      totalQuestions: quiz.questions.length,
+      overall: {
+        totalParticipants: overallRankings.length,
+        rankings: overallRankings
+      },
+      classwise: Array.from(classLeaderboards.values())
+        .map(leaderboard => ({
+          className: leaderboard.className,
+          totalParticipants: leaderboard.rankings.length,
+          rankings: leaderboard.rankings
+        }))
+    });
+  } catch (error) {
+    logger.error('Get quiz leaderboard error:', error);
+    res.status(500).json({ message: 'Failed to fetch leaderboard' });
+  }
+};
+
 module.exports = {
   createQuiz,
   getQuizDetails,
@@ -495,5 +600,6 @@ module.exports = {
   startQuiz,
   submitQuiz,
   extendQuizTime,
-  generateQuizReport
+  generateQuizReport,
+  getQuizLeaderboard
 };

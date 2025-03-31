@@ -121,9 +121,10 @@ const login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    if (!user.isVerified) {
-      return res.status(401).json({ message: 'Please verify your email first' });
-    }
+    // Temporarily bypass email verification for development
+    // if (!user.isVerified) {
+    //   return res.status(401).json({ message: 'Please verify your email first' });
+    // }
 
     const isValidPassword = await user.comparePassword(password);
     if (!isValidPassword) {

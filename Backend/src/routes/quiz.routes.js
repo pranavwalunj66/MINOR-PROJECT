@@ -10,7 +10,8 @@ const {
   startQuiz,
   submitQuiz,
   extendQuizTime,
-  generateQuizReport
+  generateQuizReport,
+  getQuizLeaderboard
 } = require('../controllers/quiz.controller');
 
 const router = express.Router();
@@ -26,5 +27,8 @@ router.get('/student/all', auth, studentAuth, getStudentQuizzes);
 router.get('/:quizId', auth, getQuizDetails);
 router.post('/:quizId/start', auth, studentAuth, startQuiz);
 router.post('/:quizId/submit', auth, studentAuth, submitQuiz);
+
+// Leaderboard route (accessible to both teachers and students)
+router.get('/:quizId/leaderboard', auth, getQuizLeaderboard);
 
 module.exports = router;

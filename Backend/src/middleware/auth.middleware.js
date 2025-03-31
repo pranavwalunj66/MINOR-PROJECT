@@ -19,9 +19,10 @@ const auth = async (req, res, next) => {
       return res.status(401).json({ message: 'User not found' });
     }
 
-    if (!user.isVerified) {
-      return res.status(401).json({ message: 'Email not verified' });
-    }
+    // Temporarily bypass email verification for development
+    // if (!user.isVerified) {
+    //   return res.status(401).json({ message: 'Email not verified' });
+    // }
 
     req.user = user;
     next();
