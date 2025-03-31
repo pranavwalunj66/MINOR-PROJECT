@@ -1,244 +1,197 @@
 # Quizcraze API Documentation
 
-## Base URL
+## Base URLs
 ```
-http://localhost:5000/api
+Production: https://minor-project-sfsm.vercel.app/api
+Development: http://localhost:5000/api
 ```
 
-## Authentication
+## Testing with Postman
 
-### Register User
+### Setup Steps
+1. Create a new Postman Collection named "Quizcraze API"
+2. Set up environment variables:
+   - Create two environments: "Development" and "Production"
+   - Add these variables to both:
+     - `BASE_URL`: Use respective URLs from above
+     - `TOKEN`: Will be automatically filled after login
+
+### Authentication Flow
+1. Register a new user
+2. Login with credentials
+3. Copy the token from the response
+4. Set up a Collection-level Authorization:
+   - Type: Bearer Token
+   - Token: `{{TOKEN}}`
+
+## API Endpoints
+
+### 1. Authentication
+
+#### Register User
 ```http
-POST /auth/register
-```
-**Body:**
-```json
+POST {{BASE_URL}}/auth/register
+Content-Type: application/json
+
 {
-  "name": "string",
-  "email": "string",
-  "phone": "string",
-  "password": "string",
-  "role": "teacher|student",
-  "department": "string (required for students)",
-  "prn": "string (12 digits, required for students)"
+  "name": "Test User",
+  "email": "test@example.com",
+  "phone": "+919876543210",
+  "password": "Test@123",
+  "role": "teacher", // or "student"
+  "department": "Computer Science", // required for students
+  "prn": "123456789012" // required for students, 12 digits
 }
 ```
 
-### Verify OTP
+#### Login
 ```http
-POST /auth/verify-otp
-```
-**Body:**
-```json
+POST {{BASE_URL}}/auth/login
+Content-Type: application/json
+
 {
-  "email": "string",
-  "otp": "string (6 digits)"
+  "email": "test@example.com",
+  "password": "Test@123"
+}
+```
+**Response**: Copy the token and set it as environment variable `TOKEN`
+
+### 2. Class Management
+
+#### Create Class (Teacher Only)
+```http
+POST {{BASE_URL}}/classes
+Content-Type: application/json
+Authorization: Bearer {{TOKEN}}
+
+{
+  "name": "Test Class",
+  "enrollmentKey": "test123"
 }
 ```
 
-### Login
+#### Join Class (Student Only)
 ```http
-POST /auth/login
-```
-**Body:**
-```json
+POST {{BASE_URL}}/classes/join
+Content-Type: application/json
+Authorization: Bearer {{TOKEN}}
+
 {
-  "email": "string",
-  "password": "string"
-}
-```
-**Response:**
-```json
-{
-  "accessToken": "string",
-  "refreshToken": "string",
-  "user": {
-    "id": "string",
-    "name": "string",
-    "role": "string"
-  }
+  "enrollmentKey": "test123"
 }
 ```
 
-### Refresh Token
+#### Get My Classes
+For Teachers:
 ```http
-POST /auth/refresh-token
+GET {{BASE_URL}}/classes/teacher
+Authorization: Bearer {{TOKEN}}
 ```
-**Body:**
-```json
+
+For Students:
+```http
+GET {{BASE_URL}}/classes/student
+Authorization: Bearer {{TOKEN}}
+```
+
+### 3. Quiz Management
+
+#### Create Quiz (Teacher Only)
+```http
+POST {{BASE_URL}}/quizzes
+Content-Type: application/json
+Authorization: Bearer {{TOKEN}}
+
 {
-  "refreshToken": "string"
+  "title": "Test Quiz",
+  "description": "Quiz description",
+  "classIds": ["class_id_here"],
+  "timeLimit": 30,
+  "windowStart": "2025-03-29T10:00:00.000Z",
+  "windowEnd": "2025-03-29T11:00:00.000Z",
+  "questions": [
+    {
+      "text": "Question 1?",
+      "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
+      "correctOption": 0
+    }
+  ]
 }
 ```
 
-## Class Management
-
-### Create Class (Teacher)
+#### Get Quiz Details
 ```http
-POST /classes
+GET {{BASE_URL}}/quizzes/:quizId
+Authorization: Bearer {{TOKEN}}
 ```
-**Headers:**
+
+#### Start Quiz (Student Only)
+```http
+POST {{BASE_URL}}/quizzes/:quizId/start
+Authorization: Bearer {{TOKEN}}
 ```
-Authorization: Bearer {accessToken}
-```
-**Body:**
-```json
+
+#### Submit Quiz (Student Only)
+```http
+POST {{BASE_URL}}/quizzes/:quizId/submit
+Content-Type: application/json
+Authorization: Bearer {{TOKEN}}
+
 {
-  "name": "string",
-  "enrollmentKey": "string"
+  "answers": [0, 1, 2] // Array of selected option indices
 }
 ```
 
-### Join Class (Student)
-```http
-POST /classes/join
-```
-**Headers:**
-```
-Authorization: Bearer {accessToken}
-```
-**Body:**
-```json
-{
-  "enrollmentKey": "string"
-}
-```
+### Testing Checklist
 
-### Get Classes
-```http
-GET /classes/teacher  # For teachers
-GET /classes/student  # For students
-```
-**Headers:**
-```
-Authorization: Bearer {accessToken}
-```
+1. **Authentication**
+   - [ ] Register as teacher
+   - [ ] Register as student
+   - [ ] Login as teacher
+   - [ ] Login as student
+   - [ ] Verify token works
 
-### Get Class Details (Teacher)
-```http
-GET /classes/details/:classId
-```
-**Headers:**
-```
-Authorization: Bearer {accessToken}
-```
+2. **Class Management**
+   - [ ] Create class (teacher)
+   - [ ] Join class (student)
+   - [ ] View teacher's classes
+   - [ ] View student's classes
+   - [ ] Block/unblock student
 
-### Get Class Leaderboard
-```http
-GET /classes/:classId/leaderboard
-```
-**Headers:**
-```
-Authorization: Bearer {accessToken}
-```
+3. **Quiz Management**
+   - [ ] Create quiz
+   - [ ] Set time window
+   - [ ] Add questions
+   - [ ] Start quiz (verify time window)
+   - [ ] Submit answers
+   - [ ] View results
 
-### Block/Unblock Student (Teacher)
-```http
-POST /classes/toggle-block
-```
-**Headers:**
-```
-Authorization: Bearer {accessToken}
-```
-**Body:**
-```json
-{
-  "classId": "string",
-  "studentId": "string",
-  "action": "block|unblock"
-}
-```
+### Common Issues and Solutions
 
-## Quiz Management
+1. **Invalid Token**
+   - Ensure token is copied correctly
+   - Token might be expired (re-login)
+   - Check if Bearer prefix is included
 
-### Create Quiz (Teacher)
-```http
-POST /quizzes
-```
-**Headers:**
-```
-Authorization: Bearer {accessToken}
-```
-**Body:**
-```json
-{
-  "title": "string",
-  "description": "string",
-  "classIds": ["string"],
-  "questions": [{
-    "text": "string",
-    "options": [{
-      "text": "string",
-      "isCorrect": "boolean"
-    }]
-  }],
-  "timeLimit": "number",
-  "scheduledFor": "date",
-  "passingCriteria": "number (optional)"
-}
-```
+2. **Permission Errors**
+   - Verify user role (teacher/student)
+   - Check if user belongs to the class
+   - Validate time window for quizzes
 
-### Get Quizzes
-```http
-GET /quizzes/teacher  # For teachers
-GET /quizzes/student  # For students
-```
-**Headers:**
-```
-Authorization: Bearer {accessToken}
-```
+3. **Time Window Issues**
+   - Use UTC times in requests
+   - Ensure windowStart is before windowEnd
+   - Check server timezone settings
 
-### Get Quiz Details
-```http
-GET /quizzes/:quizId
-```
-**Headers:**
-```
-Authorization: Bearer {accessToken}
-```
+### Response Codes
 
-### Submit Quiz (Student)
-```http
-POST /quizzes/:quizId/submit
-```
-**Headers:**
-```
-Authorization: Bearer {accessToken}
-```
-**Body:**
-```json
-{
-  "answers": [{
-    "selectedOptions": ["string"]
-  }]
-}
-```
-
-### Extend Quiz Time (Teacher)
-```http
-POST /quizzes/extend-time
-```
-**Headers:**
-```
-Authorization: Bearer {accessToken}
-```
-**Body:**
-```json
-{
-  "quizId": "string",
-  "studentId": "string",
-  "extraTime": "number"
-}
-```
-
-### Generate Quiz Report (Teacher)
-```http
-GET /quizzes/:quizId/report
-```
-**Headers:**
-```
-Authorization: Bearer {accessToken}
-```
+- 200: Success
+- 201: Created
+- 400: Bad Request
+- 401: Unauthorized
+- 403: Forbidden
+- 404: Not Found
+- 500: Server Error
 
 ## Error Responses
 
@@ -277,19 +230,6 @@ Authorization: Bearer {accessToken}
   "message": "Something went wrong"
 }
 ```
-
-## Testing with Postman
-
-1. Import the Postman collection from the `postman` directory
-2. Set up environment variables:
-   - `BASE_URL`: Your API base URL
-   - `ACCESS_TOKEN`: JWT token received after login
-3. Use the pre-request scripts to automatically set tokens
-4. Follow the request sequence:
-   - Register user
-   - Verify OTP
-   - Login
-   - Use other endpoints
 
 ## Rate Limiting
 - 100 requests per 15 minutes per IP
