@@ -626,3 +626,8 @@
 {"level":"info","message":"MongoDB Connected: bdsm-shard-00-02.djl11.mongodb.net","timestamp":"2025-03-31T15:56:02.572Z"}
 {"level":"info","message":"::1 - - [31/Mar/2025:15:56:27 +0000] \"POST /api/auth/login HTTP/1.1\" 200 530 \"-\" \"Mozilla/5.0 (Windows NT; Windows NT 10.0; en-IN) WindowsPowerShell/5.1.26100.2161\" {\"password\":\"[REDACTED]\",\"email\":\"teacher@test.com\"}","timestamp":"2025-03-31T15:56:27.988Z"}
 {"level":"info","message":"::1 - - [31/Mar/2025:15:56:28 +0000] \"GET /api/quizzes/67eab875ea1a1fba35d1ba2d/leaderboard HTTP/1.1\" 200 1288 \"-\" \"Mozilla/5.0 (Windows NT; Windows NT 10.0; en-IN) WindowsPowerShell/5.1.26100.2161\" {}","timestamp":"2025-03-31T15:56:28.075Z"}
+{"level":"warn","message":"MongoDB disconnected","timestamp":"2025-03-31T18:20:08.944Z"}
+{"level":"info","message":"Server is running on port 5000","timestamp":"2025-04-01T04:38:03.452Z"}
+{"level":"info","message":"MongoDB Connected: bdsm-shard-00-02.djl11.mongodb.net","timestamp":"2025-04-01T04:38:03.767Z"}
+{"level":"info","message":"Server is running on port 5000","timestamp":"2025-04-01T07:16:54.317Z"}
+{"level":"info","message":"MongoDB Connected: bdsm-shard-00-01.djl11.mongodb.net","timestamp":"2025-04-01T07:16:54.777Z"}

@@ -103,18 +103,19 @@ Content-Type: application/json
 Authorization: Bearer {{TOKEN}}
 
 {
-  "title": "Test Quiz",
-  "description": "Quiz description",
-  "classIds": ["class_id_here"],
-  "timeLimit": 30,
-  "windowStart": "2025-03-29T10:00:00.000Z",
-  "windowEnd": "2025-03-29T11:00:00.000Z",
+  "title": "Sample Quiz",
+  "description": "A test quiz",
+  "classIds": ["class_id1", "class_id2"],
+  "timeLimit": 30, // in minutes
+  "windowStart": "2025-04-01T10:00:00Z",
+  "windowEnd": "2025-04-01T23:59:59Z",
   "questions": [
     {
-      "text": "Question 1?",
-      "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
-      "correctOption": 0
+      "text": "What is 2+2?",
+      "options": ["3", "4", "5", "6"],
+      "correctOption": 1
     }
+    // Maximum 50 questions allowed
   ]
 }
 ```
@@ -124,12 +125,35 @@ Authorization: Bearer {{TOKEN}}
 GET {{BASE_URL}}/quizzes/:quizId
 Authorization: Bearer {{TOKEN}}
 ```
+- Teachers see full details including correct answers and all attempts
+- Students see limited details based on quiz status
+- Updates quiz status automatically based on time window
+
+#### Get Teacher's Quizzes
+```http
+GET {{BASE_URL}}/quizzes/teacher/all
+Authorization: Bearer {{TOKEN}}
+```
+Returns all quizzes created by the teacher with their current status
+
+#### Get Student's Quizzes
+```http
+GET {{BASE_URL}}/quizzes/student/all
+Authorization: Bearer {{TOKEN}}
+```
+Returns:
+- Upcoming quizzes from enrolled classes
+- Ongoing quizzes that can be attempted
+- Past quizzes with student's attempt details
 
 #### Start Quiz (Student Only)
 ```http
 POST {{BASE_URL}}/quizzes/:quizId/start
 Authorization: Bearer {{TOKEN}}
 ```
+- Validates quiz timing and student eligibility
+- Creates a new attempt with start time
+- Returns questions without correct answers
 
 #### Submit Quiz (Student Only)
 ```http
@@ -138,60 +162,83 @@ Content-Type: application/json
 Authorization: Bearer {{TOKEN}}
 
 {
-  "answers": [0, 1, 2] // Array of selected option indices
+  "answers": [
+    {
+      "questionIndex": 0,
+      "selectedOption": 1
+    }
+  ]
+}
+```
+- Validates submission timing
+- Calculates score automatically
+- Prevents multiple submissions
+
+#### Extend Quiz Time (Teacher Only)
+```http
+POST {{BASE_URL}}/quizzes/:quizId/extend
+Content-Type: application/json
+Authorization: Bearer {{TOKEN}}
+
+{
+  "additionalMinutes": 15
+}
+```
+Extends the time limit for ongoing quiz attempts
+
+#### Generate Quiz Report (Teacher Only)
+```http
+GET {{BASE_URL}}/quizzes/:quizId/report
+Authorization: Bearer {{TOKEN}}
+```
+Generates an Excel report with:
+- Student details
+- Submission times
+- Scores
+- Question-wise analysis
+
+#### Get Quiz Leaderboard
+```http
+GET {{BASE_URL}}/quizzes/:quizId/leaderboard
+Authorization: Bearer {{TOKEN}}
+```
+- Accessible to both teachers and students
+- Shows class-wise rankings
+- Based on total correct answers
+- Updates in real-time as students submit
+
+## Response Formats
+
+### Success Response
+```json
+{
+  "message": "Success message",
+  "data": {
+    // Response data
+  }
 }
 ```
 
-### Testing Checklist
+### Error Response
+```json
+{
+  "message": "Error description"
+}
+```
 
-1. **Authentication**
-   - [ ] Register as teacher
-   - [ ] Register as student
-   - [ ] Login as teacher
-   - [ ] Login as student
-   - [ ] Verify token works
-
-2. **Class Management**
-   - [ ] Create class (teacher)
-   - [ ] Join class (student)
-   - [ ] View teacher's classes
-   - [ ] View student's classes
-   - [ ] Block/unblock student
-
-3. **Quiz Management**
-   - [ ] Create quiz
-   - [ ] Set time window
-   - [ ] Add questions
-   - [ ] Start quiz (verify time window)
-   - [ ] Submit answers
-   - [ ] View results
-
-### Common Issues and Solutions
-
-1. **Invalid Token**
-   - Ensure token is copied correctly
-   - Token might be expired (re-login)
-   - Check if Bearer prefix is included
-
-2. **Permission Errors**
-   - Verify user role (teacher/student)
-   - Check if user belongs to the class
-   - Validate time window for quizzes
-
-3. **Time Window Issues**
-   - Use UTC times in requests
-   - Ensure windowStart is before windowEnd
-   - Check server timezone settings
-
-### Response Codes
-
+## Common HTTP Status Codes
 - 200: Success
-- 201: Created
-- 400: Bad Request
-- 401: Unauthorized
-- 403: Forbidden
-- 404: Not Found
-- 500: Server Error
+- 201: Created successfully
+- 400: Bad request / Invalid input
+- 401: Unauthorized / Invalid token
+- 403: Forbidden / Insufficient permissions
+- 404: Resource not found
+- 500: Server error
+
+## Rate Limiting
+- 100 requests per minute per IP
+- Applies to all endpoints
+- Status 429 when limit exceeded
 
 ## Error Responses
 
@@ -231,10 +278,6 @@ Authorization: Bearer {{TOKEN}}
 }
 ```
 
-## Rate Limiting
-- 100 requests per 15 minutes per IP
-- OTP verification limited to 5 attempts
-
 ## Security Features
 - JWT-based authentication
 - Password hashing
@@ -242,3 +285,44 @@ Authorization: Bearer {{TOKEN}}
 - Role-based access control
 - Rate limiting
 - CORS enabled
+
+## Testing Checklist
+
+1. **Authentication**
+   - [ ] Register as teacher
+   - [ ] Register as student
+   - [ ] Login as teacher
+   - [ ] Login as student
+   - [ ] Verify token works
+
+2. **Class Management**
+   - [ ] Create class (teacher)
+   - [ ] Join class (student)
+   - [ ] View teacher's classes
+   - [ ] View student's classes
+   - [ ] Block/unblock student
+
+3. **Quiz Management**
+   - [ ] Create quiz
+   - [ ] Set time window
+   - [ ] Add questions
+   - [ ] Start quiz (verify time window)
+   - [ ] Submit answers
+   - [ ] View results
+
+### Common Issues and Solutions
+
+1. **Invalid Token**
+   - Ensure token is copied correctly
+   - Token might be expired (re-login)
+   - Check if Bearer prefix is included
+
+2. **Permission Errors**
+   - Verify user role (teacher/student)
+   - Check if user belongs to the class
+   - Validate time window for quizzes
+
+3. **Time Window Issues**
+   - Use UTC times in requests
+   - Ensure windowStart is before windowEnd
+   - Check server timezone settings
