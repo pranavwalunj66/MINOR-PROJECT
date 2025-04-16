@@ -101,35 +101,53 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body;
     
-    // Check both collections for the user
+    // First check in Teacher collection
     let user = await Teacher.findOne({ email });
     let role = 'teacher';
     
+    // If not found in Teacher, check Student collection
     if (!user) {
       user = await Student.findOne({ email });
       role = 'student';
     }
 
+    // If user not found in either collection
     if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ 
+        message: 'Invalid credentials',
+        errors: [{ msg: 'No account found with this email' }]
+      });
     }
 
     const isValidPassword = await user.comparePassword(password);
     if (!isValidPassword) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ 
+        message: 'Invalid credentials',
+        errors: [{ msg: 'Incorrect password' }]
+      });
     }
 
     const token = generateToken(user);
     const refreshToken = generateRefreshToken(user);
 
+    // Return role-specific user data
+    const userData = {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: role,
+      redirectTo: role === 'teacher' ? '/teacher-dashboard' : '/student-dashboard'
+    };
+
+    // Add role-specific fields
+    if (role === 'student') {
+      userData.department = user.department;
+      userData.prn = user.prn;
+    }
+
     res.json({
       message: 'Login successful',
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: role
-      },
+      user: userData,
       token,
       refreshToken
     });

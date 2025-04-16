@@ -87,7 +87,10 @@ export default function Login() {
       const response = await authService.login(formData);
       dispatch(setCredentials(response));
       toast.success('Login successful');
-      navigate('/dashboard');
+      
+      // Navigate based on user role
+      const dashboardPath = response.user.role === 'teacher' ? '/teacher-dashboard' : '/student-dashboard';
+      navigate(dashboardPath);
     } catch (error) {
       console.error('Login error:', error);
       toast.error(error.response?.data?.message || 'Login failed');
