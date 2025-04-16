@@ -18,6 +18,9 @@ const quizRoutes = require('./src/routes/quiz.routes');
 // Initialize express app
 const app = express();
 
+// CORS configuration
+app.use(cors(config.cors));
+
 // Security middleware
 app.use(helmet());
 
@@ -27,7 +30,6 @@ app.use(compression());
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors(config.cors));
 app.use(requestLogger);
 
 // Rate limiting

@@ -4,6 +4,9 @@ const { generateOTP, sendEmailOTP, sendSMSOTP } = require('../utils/otp.utils');
 const redisClient = require('../config/redis');
 const logger = require('../utils/logger');
 
+// Temporary development mode flag
+const DEV_MODE = true; // Set this to false when you want to re-enable authentication
+
 const register = async (req, res) => {
   try {
     const { email, phone } = req.body;
@@ -25,6 +28,28 @@ const register = async (req, res) => {
 
     // Create user
     const user = new User(req.body);
+
+    if (DEV_MODE) {
+      // In dev mode, automatically verify the user
+      user.isVerified = true;
+      await user.save();
+
+      // Generate tokens
+      const token = generateToken(user);
+      const refreshToken = generateRefreshToken(user);
+
+      return res.status(201).json({
+        message: 'Registration successful',
+        user: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role
+        },
+        token,
+        refreshToken
+      });
+    }
 
     // Generate OTP
     const otp = generateOTP();
@@ -50,7 +75,7 @@ const register = async (req, res) => {
     }
 
     res.status(201).json({
-      message: 'Registration successful. Please verify your email and phone.'
+      message: 'Registration successful. Please verify your email.'
     });
   } catch (error) {
     logger.error('Registration error:', error);

@@ -129,9 +129,23 @@ export default function Register() {
 
     setIsLoading(true);
     try {
-      await authService.register(formData);
-      toast.success('Registration successful! Please verify your email.');
-      navigate('/auth/verify-otp');
+      const response = await authService.register(formData);
+      toast.success('Registration successful!');
+      
+      // If we get a token in response, it means we're in dev mode
+      if (response.token) {
+        // Store the token
+        localStorage.setItem('token', response.token);
+        // Redirect based on role
+        if (response.user.role === 'teacher') {
+          navigate('/teacher-dashboard');
+        } else {
+          navigate('/student-dashboard');
+        }
+      } else {
+        // Normal flow - redirect to OTP verification
+        navigate('/verify-otp');
+      }
     } catch (error) {
       console.error('Registration error:', error);
       toast.error(error.response?.data?.message || 'Registration failed');
