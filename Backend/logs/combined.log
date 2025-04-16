@@ -631,3 +631,30 @@
 {"level":"info","message":"MongoDB Connected: bdsm-shard-00-02.djl11.mongodb.net","timestamp":"2025-04-01T04:38:03.767Z"}
 {"level":"info","message":"Server is running on port 5000","timestamp":"2025-04-01T07:16:54.317Z"}
 {"level":"info","message":"MongoDB Connected: bdsm-shard-00-01.djl11.mongodb.net","timestamp":"2025-04-01T07:16:54.777Z"}
+{"level":"warn","message":"MongoDB disconnected","timestamp":"2025-04-01T08:23:18.257Z"}
+{"level":"warn","message":"MongoDB disconnected","timestamp":"2025-04-01T14:48:26.734Z"}
+{"level":"info","message":"Server is running on port 5000","timestamp":"2025-04-03T14:37:58.206Z"}
+{"level":"info","message":"MongoDB Connected: bdsm-shard-00-00.djl11.mongodb.net","timestamp":"2025-04-03T14:37:58.643Z"}
+{"level":"warn","message":"MongoDB disconnected","timestamp":"2025-04-03T14:47:29.406Z"}
+{"level":"info","message":"Server is running on port 5000","timestamp":"2025-04-03T15:49:26.856Z"}
+{"level":"info","message":"MongoDB Connected: bdsm-shard-00-00.djl11.mongodb.net","timestamp":"2025-04-03T15:49:27.194Z"}
+{"level":"info","message":"Server is running on port 5000","timestamp":"2025-04-03T15:53:06.540Z"}
+{"level":"info","message":"MongoDB Connected: bdsm-shard-00-01.djl11.mongodb.net","timestamp":"2025-04-03T15:53:06.852Z"}
+{"level":"info","message":"Server is running on port 5000","timestamp":"2025-04-03T15:53:59.529Z"}
+{"level":"info","message":"MongoDB Connected: bdsm-shard-00-01.djl11.mongodb.net","timestamp":"2025-04-03T15:53:59.796Z"}
+{"level":"warn","message":"MongoDB disconnected","timestamp":"2025-04-03T19:32:27.016Z"}
+{"level":"warn","message":"MongoDB disconnected","timestamp":"2025-04-03T20:50:02.363Z"}
+{"level":"info","message":"Server is running on port 5000","timestamp":"2025-04-03T21:11:17.518Z"}
+{"level":"info","message":"MongoDB Connected: bdsm-shard-00-01.djl11.mongodb.net","timestamp":"2025-04-03T21:11:18.029Z"}
+{"level":"info","message":"Server is running on port 5000","timestamp":"2025-04-04T07:21:50.806Z"}
+{"level":"info","message":"MongoDB Connected: bdsm-shard-00-00.djl11.mongodb.net","timestamp":"2025-04-04T07:21:52.657Z"}
+{"level":"info","message":"Server is running on port 5000","timestamp":"2025-04-04T07:24:15.593Z"}
+{"level":"info","message":"MongoDB Connected: bdsm-shard-00-00.djl11.mongodb.net","timestamp":"2025-04-04T07:24:17.272Z"}
+{"level":"info","message":"Server is running on port 5000","timestamp":"2025-04-04T07:29:00.693Z"}
+{"level":"info","message":"MongoDB Connected: bdsm-shard-00-00.djl11.mongodb.net","timestamp":"2025-04-04T07:29:03.273Z"}
+{"level":"warn","message":"MongoDB disconnected","timestamp":"2025-04-04T07:43:57.636Z"}
+{"level":"warn","message":"MongoDB disconnected","timestamp":"2025-04-04T07:58:17.312Z"}
+{"level":"warn","message":"MongoDB disconnected","timestamp":"2025-04-04T08:03:23.948Z"}
+{"level":"info","message":"Server is running on port 5000","timestamp":"2025-04-04T08:42:40.856Z"}
+{"level":"info","message":"Server is running on port 5000","timestamp":"2025-04-16T05:36:12.494Z"}
+{"level":"info","message":"MongoDB Connected: bdsm-shard-00-02.djl11.mongodb.net","timestamp":"2025-04-16T05:36:13.956Z"}

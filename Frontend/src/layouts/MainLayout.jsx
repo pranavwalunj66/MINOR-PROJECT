@@ -44,7 +44,7 @@ const MainLayout = () => {
 
   const handleLogout = () => {
     dispatch(logout());
-    navigate('/auth/login');
+    navigate('/login');
   };
 
   const menuItems = [

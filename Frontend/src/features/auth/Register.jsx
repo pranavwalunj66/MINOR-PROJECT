@@ -1,20 +1,38 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { toast } from 'react-hot-toast';
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { authService } from '../../services/auth.service';
 import {
+  Container,
+  Paper,
+  Typography,
   TextField,
   Button,
   Box,
-  Typography,
-  MenuItem,
   Link as MuiLink,
   FormControl,
-  Select,
   InputLabel,
+  Select,
+  MenuItem,
+  OutlinedInput,
+  InputAdornment,
+  IconButton,
+  FormHelperText,
 } from '@mui/material';
-import { authService } from '../../services/auth.service';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { toast } from 'react-hot-toast';
 
-const Register = () => {
+const DEPARTMENTS = [
+  'Computer Science',
+  'Information Technology',
+  'Electronics',
+  'Mechanical',
+  'Civil',
+  'Chemical',
+];
+
+export default function Register() {
+  const navigate = useNavigate();
+  
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -25,7 +43,61 @@ const Register = () => {
     prn: '',
   });
 
-  const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    // Name validation
+    if (!formData.name.trim()) {
+      newErrors.name = 'Name is required';
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email) {
+      newErrors.email = 'Email is required';
+    } else if (!emailRegex.test(formData.email)) {
+      newErrors.email = 'Invalid email address';
+    }
+
+    // Phone validation
+    const phoneRegex = /^\d{10}$/;
+    if (!formData.phone) {
+      newErrors.phone = 'Phone number is required';
+    } else if (!phoneRegex.test(formData.phone)) {
+      newErrors.phone = 'Phone number must be 10 digits';
+    }
+
+    // Password validation
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (!passwordRegex.test(formData.password)) {
+      newErrors.password = 'Password must be at least 8 characters with 1 uppercase, 1 lowercase, and 1 number';
+    }
+
+    // Student specific validations
+    if (formData.role === 'student') {
+      // PRN validation
+      const prnRegex = /^\d{12}$/;
+      if (!formData.prn) {
+        newErrors.prn = 'PRN is required';
+      } else if (!prnRegex.test(formData.prn)) {
+        newErrors.prn = 'PRN must be 12 digits';
+      }
+
+      // Department validation
+      if (!formData.department) {
+        newErrors.department = 'Department is required';
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -33,141 +105,183 @@ const Register = () => {
       ...prev,
       [name]: value,
     }));
+    // Clear error when field is modified
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const handleClickShowPassword = () => {
+    setShowPassword((show) => !show);
+  };
+
+  const handleMouseDownPassword = (event) => {
+    event.preventDefault();
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    if (!validateForm()) {
+      toast.error('Please fix the errors in the form');
+      return;
+    }
+
+    setIsLoading(true);
     try {
       await authService.register(formData);
-      toast.success('Registration successful! Please verify your OTP.');
-      navigate('/verify-otp', { state: { email: formData.email } });
+      toast.success('Registration successful! Please verify your email.');
+      navigate('/auth/verify-otp');
     } catch (error) {
+      console.error('Registration error:', error);
       toast.error(error.response?.data?.message || 'Registration failed');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
-      <TextField
-        margin="normal"
-        required
-        fullWidth
-        id="name"
-        label="Full Name"
-        name="name"
-        autoComplete="name"
-        autoFocus
-        value={formData.name}
-        onChange={handleChange}
-      />
-
-      <TextField
-        margin="normal"
-        required
-        fullWidth
-        id="email"
-        label="Email Address"
-        name="email"
-        autoComplete="email"
-        value={formData.email}
-        onChange={handleChange}
-      />
-
-      <TextField
-        margin="normal"
-        required
-        fullWidth
-        id="phone"
-        label="Phone Number"
-        name="phone"
-        type="tel"
-        value={formData.phone}
-        onChange={handleChange}
-        inputProps={{
-          pattern: "[+][0-9]{12}",
-          title: "Phone number format: +919876543210"
-        }}
-      />
-
-      <TextField
-        margin="normal"
-        required
-        fullWidth
-        name="password"
-        label="Password"
-        type="password"
-        id="password"
-        autoComplete="new-password"
-        value={formData.password}
-        onChange={handleChange}
-      />
-
-      <FormControl fullWidth margin="normal">
-        <InputLabel id="role-label">Role</InputLabel>
-        <Select
-          labelId="role-label"
-          id="role"
-          name="role"
-          value={formData.role}
-          onChange={handleChange}
-          label="Role"
-        >
-          <MenuItem value="student">Student</MenuItem>
-          <MenuItem value="teacher">Teacher</MenuItem>
-        </Select>
-      </FormControl>
-
-      {formData.role === 'student' && (
-        <>
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="department"
-            label="Department"
-            name="department"
-            value={formData.department}
-            onChange={handleChange}
-          />
-
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="prn"
-            label="PRN"
-            name="prn"
-            value={formData.prn}
-            onChange={handleChange}
-            inputProps={{
-              maxLength: 12,
-              pattern: "[0-9]{12}",
-              title: "PRN must be 12 digits"
-            }}
-          />
-        </>
-      )}
-
-      <Button
-        type="submit"
-        fullWidth
-        variant="contained"
-        sx={{ mt: 3, mb: 2 }}
-      >
-        Register
-      </Button>
-
-      <Box sx={{ textAlign: 'center', mt: 2 }}>
-        <Typography variant="body2" color="text.secondary">
-          Already have an account?{' '}
-          <MuiLink component={Link} to="/login" variant="body2">
-            Sign in here
-          </MuiLink>
+    <Container component="main" maxWidth="xs">
+      <Paper elevation={3} sx={{ p: 4, mt: 8 }}>
+        <Typography component="h1" variant="h5" align="center" gutterBottom>
+          Create Your Account
         </Typography>
-      </Box>
-    </Box>
-  );
-};
+        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            label="Full Name"
+            name="name"
+            autoComplete="name"
+            value={formData.name}
+            onChange={handleChange}
+            error={!!errors.name}
+            helperText={errors.name}
+            autoFocus
+          />
 
-export default Register;
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            label="Email Address"
+            name="email"
+            type="email"
+            autoComplete="email"
+            value={formData.email}
+            onChange={handleChange}
+            error={!!errors.email}
+            helperText={errors.email}
+          />
+
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            label="Phone Number"
+            name="phone"
+            type="tel"
+            autoComplete="tel"
+            value={formData.phone}
+            onChange={handleChange}
+            error={!!errors.phone}
+            helperText={errors.phone}
+          />
+
+          <FormControl fullWidth margin="normal" variant="outlined" error={!!errors.password}>
+            <InputLabel htmlFor="password">Password</InputLabel>
+            <OutlinedInput
+              id="password"
+              name="password"
+              type={showPassword ? 'text' : 'password'}
+              value={formData.password}
+              onChange={handleChange}
+              endAdornment={
+                <InputAdornment position="end">
+                  <IconButton
+                    aria-label="toggle password visibility"
+                    onClick={handleClickShowPassword}
+                    onMouseDown={handleMouseDownPassword}
+                    edge="end"
+                  >
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              }
+              label="Password"
+            />
+            {errors.password && (
+              <FormHelperText>{errors.password}</FormHelperText>
+            )}
+          </FormControl>
+
+          <FormControl fullWidth margin="normal">
+            <InputLabel>Role</InputLabel>
+            <Select
+              name="role"
+              value={formData.role}
+              onChange={handleChange}
+              label="Role"
+            >
+              <MenuItem value="student">Student</MenuItem>
+              <MenuItem value="teacher">Teacher</MenuItem>
+            </Select>
+          </FormControl>
+
+          {formData.role === 'student' && (
+            <>
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                label="PRN (12 digits)"
+                name="prn"
+                value={formData.prn}
+                onChange={handleChange}
+                error={!!errors.prn}
+                helperText={errors.prn}
+              />
+
+              <FormControl fullWidth margin="normal" error={!!errors.department}>
+                <InputLabel>Department</InputLabel>
+                <Select
+                  name="department"
+                  value={formData.department}
+                  onChange={handleChange}
+                  label="Department"
+                >
+                  {DEPARTMENTS.map((dept) => (
+                    <MenuItem key={dept} value={dept}>
+                      {dept}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {errors.department && (
+                  <FormHelperText>{errors.department}</FormHelperText>
+                )}
+              </FormControl>
+            </>
+          )}
+
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            sx={{ mt: 3, mb: 2 }}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Signing up...' : 'Sign Up'}
+          </Button>
+
+          <Typography variant="body2" align="center">
+            Already have an account?{' '}
+            <MuiLink component={Link} to="/login">
+              Sign in
+            </MuiLink>
+          </Typography>
+        </Box>
+      </Paper>
+    </Container>
+  );
+}

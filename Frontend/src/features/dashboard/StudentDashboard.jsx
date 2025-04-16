@@ -11,7 +11,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { HiAcademicCap, HiClipboardCheck, HiTrophy } from 'react-icons/hi';
+import { School, AssignmentTurnedIn, EmojiEvents } from '@mui/icons-material';
 
 // Register ChartJS components
 ChartJS.register(
@@ -102,11 +102,11 @@ const StudentDashboard = () => {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-blue-100 text-blue-600">
-              <HiAcademicCap className="h-8 w-8" />
+              <School className="h-8 w-8" />
             </div>
             <div className="ml-4">
               <p className="text-sm text-gray-500">Enrolled Classes</p>
-              <h3 className="text-2xl font-bold text-gray-900">{stats.totalClasses}</h3>
+              <h3 className="text-lg font-semibold text-gray-700">{stats.totalClasses}</h3>
             </div>
           </div>
         </div>
@@ -114,11 +114,11 @@ const StudentDashboard = () => {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-green-100 text-green-600">
-              <HiClipboardCheck className="h-8 w-8" />
+              <AssignmentTurnedIn className="h-8 w-8" />
             </div>
             <div className="ml-4">
               <p className="text-sm text-gray-500">Completed Quizzes</p>
-              <h3 className="text-2xl font-bold text-gray-900">{stats.completedQuizzes}</h3>
+              <h3 className="text-lg font-semibold text-gray-700">{stats.completedQuizzes}</h3>
             </div>
           </div>
         </div>
@@ -126,11 +126,11 @@ const StudentDashboard = () => {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-yellow-100 text-yellow-600">
-              <HiTrophy className="h-8 w-8" />
+              <EmojiEvents className="h-8 w-8" />
             </div>
             <div className="ml-4">
               <p className="text-sm text-gray-500">Average Score</p>
-              <h3 className="text-2xl font-bold text-gray-900">{stats.averageScore}%</h3>
+              <h3 className="text-lg font-semibold text-gray-700">{stats.averageScore}%</h3>
             </div>
           </div>
         </div>
