@@ -1,81 +1,95 @@
-const User = require('../models/user.model');
+const Teacher = require('../models/teacher.model');
+const Student = require('../models/student.model');
 const { generateToken, generateRefreshToken } = require('../utils/jwt.utils');
-const { generateOTP, sendEmailOTP, sendSMSOTP } = require('../utils/otp.utils');
-const redisClient = require('../config/redis');
 const logger = require('../utils/logger');
-
-// Temporary development mode flag
-const DEV_MODE = true; // Set this to false when you want to re-enable authentication
 
 const register = async (req, res) => {
   try {
-    const { email, phone } = req.body;
+    const { name, email, phone, password, role, department, prn } = req.body;
     
-    // Check if user already exists
-    const existingUser = await User.findOne({ 
+    // Basic validation
+    if (!name || !email || !phone || !password || !role) {
+      return res.status(400).json({
+        errors: [{ msg: 'Missing required fields' }]
+      });
+    }
+    
+    // Role-specific validation
+    if (role === 'student') {
+      if (!department || !prn) {
+        return res.status(400).json({
+          errors: [{ msg: 'Department and PRN are required for students' }]
+        });
+      }
+      
+      // Validate PRN format
+      if (!/^\d{12}$/.test(prn)) {
+        return res.status(400).json({
+          errors: [{ msg: 'PRN must be a 12-digit number' }]
+        });
+      }
+    } else if (role !== 'teacher') {
+      return res.status(400).json({
+        errors: [{ msg: 'Invalid role. Must be either teacher or student' }]
+      });
+    }
+    
+    // Check if user already exists in either collection
+    const existingTeacher = await Teacher.findOne({ email });
+    const existingStudent = await Student.findOne({ 
       $or: [
         { email },
-        { phone },
-        { prn: req.body.prn }
-      ].filter(Boolean)
+        { prn: prn }
+      ]
     });
 
-    if (existingUser) {
+    if (existingTeacher || existingStudent) {
       return res.status(400).json({
-        message: 'User already exists with this email, phone, or PRN'
+        errors: [{ msg: 'User already exists with this email or PRN' }]
       });
     }
 
-    // Create user
-    const user = new User(req.body);
-
-    if (DEV_MODE) {
-      // In dev mode, automatically verify the user
-      user.isVerified = true;
-      await user.save();
-
-      // Generate tokens
-      const token = generateToken(user);
-      const refreshToken = generateRefreshToken(user);
-
-      return res.status(201).json({
-        message: 'Registration successful',
-        user: {
-          _id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role
-        },
-        token,
-        refreshToken
-      });
-    }
-
-    // Generate OTP
-    const otp = generateOTP();
-
-    // Store OTP in Redis if available, otherwise store in user document
-    if (redisClient && redisClient.isOpen) {
-      await redisClient.setEx(`otp:${email}`, 600, otp); // OTP valid for 10 minutes
+    let user;
+    if (role === 'teacher') {
+      // For teachers, only include the necessary fields
+      const teacherData = {
+        name,
+        email,
+        phone,
+        password
+      };
+      user = new Teacher(teacherData);
     } else {
-      user.tempOTP = otp;
-      user.tempOTPExpires = new Date(Date.now() + 600000); // 10 minutes
+      // For students, include all fields including department and PRN
+      const studentData = {
+        name,
+        email,
+        phone,
+        password,
+        department,
+        prn
+      };
+      user = new Student(studentData);
     }
 
+    // Set user as verified by default
+    user.isVerified = true;
     await user.save();
 
-    // Send OTP via email and SMS
-    try {
-      await Promise.all([
-        sendEmailOTP(email, otp),
-        sendSMSOTP(phone, otp)
-      ]);
-    } catch (error) {
-      logger.warn('Failed to send OTP:', error);
-    }
+    // Generate tokens
+    const token = generateToken(user);
+    const refreshToken = generateRefreshToken(user);
 
-    res.status(201).json({
-      message: 'Registration successful. Please verify your email.'
+    return res.status(201).json({
+      message: 'Registration successful',
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: role
+      },
+      token,
+      refreshToken
     });
   } catch (error) {
     logger.error('Registration error:', error);
@@ -83,89 +97,38 @@ const register = async (req, res) => {
   }
 };
 
-const verifyOTP = async (req, res) => {
-  try {
-    const { email, otp } = req.body;
-    
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    if (user.isVerified) {
-      return res.status(400).json({ message: 'User already verified' });
-    }
-
-    if (user.otpAttempts >= 5) {
-      return res.status(400).json({ message: 'Maximum OTP attempts exceeded' });
-    }
-
-    let isValidOTP = false;
-    if (redisClient && redisClient.isOpen) {
-      const storedOTP = await redisClient.get(`otp:${email}`);
-      isValidOTP = storedOTP && storedOTP === otp;
-    } else {
-      isValidOTP = user.tempOTP === otp && user.tempOTPExpires > new Date();
-    }
-
-    if (!isValidOTP) {
-      user.otpAttempts += 1;
-      await user.save();
-      return res.status(400).json({ message: 'Invalid OTP' });
-    }
-
-    user.isVerified = true;
-    user.otpAttempts = 0;
-    user.tempOTP = undefined;
-    user.tempOTPExpires = undefined;
-    await user.save();
-
-    if (redisClient && redisClient.isOpen) {
-      await redisClient.del(`otp:${email}`);
-    }
-
-    res.json({ message: 'OTP verification successful' });
-  } catch (error) {
-    logger.error('OTP verification error:', error);
-    res.status(500).json({ message: error.message || 'OTP verification failed' });
-  }
-};
-
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
     
-    const user = await User.findOne({ email });
-    logger.debug('Found user:', user ? { 
-      email: user.email, 
-      hasPassword: !!user.password,
-      isVerified: user.isVerified 
-    } : null);
+    // Check both collections for the user
+    let user = await Teacher.findOne({ email });
+    let role = 'teacher';
+    
+    if (!user) {
+      user = await Student.findOne({ email });
+      role = 'student';
+    }
 
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
-
-    // Temporarily bypass email verification for development
-    // if (!user.isVerified) {
-    //   return res.status(401).json({ message: 'Please verify your email first' });
-    // }
 
     const isValidPassword = await user.comparePassword(password);
     if (!isValidPassword) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    const token = generateToken(user._id, user.role);
-    const refreshToken = generateRefreshToken(user._id);
+    const token = generateToken(user);
+    const refreshToken = generateRefreshToken(user);
 
     res.json({
       message: 'Login successful',
       user: {
-        id: user._id,
+        _id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role
+        role: role
       },
       token,
       refreshToken
@@ -179,7 +142,7 @@ const login = async (req, res) => {
 const refreshToken = async (req, res) => {
   try {
     const { refreshToken } = req.body;
-    const token = generateToken(req.user._id, req.user.role);
+    const token = generateToken(req.user);
     res.json({ token });
   } catch (error) {
     logger.error('Token refresh error:', error);
@@ -189,10 +152,6 @@ const refreshToken = async (req, res) => {
 
 const logout = async (req, res) => {
   try {
-    // Nothing to do if Redis is not available
-    if (redisClient && redisClient.isOpen) {
-      await redisClient.del(`refresh:${req.user._id}`);
-    }
     res.json({ message: 'Logged out successfully' });
   } catch (error) {
     logger.error('Logout error:', error);
@@ -202,7 +161,6 @@ const logout = async (req, res) => {
 
 module.exports = {
   register,
-  verifyOTP,
   login,
   refreshToken,
   logout

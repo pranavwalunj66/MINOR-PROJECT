@@ -72,9 +72,17 @@ const validateQuiz = (req, res, next) => {
 
 const validateRequest = (schema) => {
   return (req, res, next) => {
-    const { error } = schema.validate(req.body);
+    const { error } = schema.validate(req.body, { abortEarly: false });
     if (error) {
-      return res.status(400).json({ errors: [{ msg: error.details[0].message }] });
+      // Handle both standard Joi errors and custom validation errors
+      const errors = error.details.map(detail => {
+        // Check if this is a custom validation error
+        if (detail.type === 'any.invalid') {
+          return { msg: detail.message };
+        }
+        return { msg: detail.message };
+      });
+      return res.status(400).json({ errors });
     }
     next();
   };

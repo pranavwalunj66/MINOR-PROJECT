@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const config = require('../config/config');
-const User = require('../models/user.model');
+const Teacher = require('../models/teacher.model');
+const Student = require('../models/student.model');
 const logger = require('../utils/logger');
 
 // Temporary development mode flag
@@ -27,7 +28,15 @@ const auth = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, config.jwtSecret);
-    const user = await User.findById(decoded.userId);
+    
+    // Try to find user in both collections
+    let user = await Teacher.findById(decoded.userId);
+    let role = 'teacher';
+    
+    if (!user) {
+      user = await Student.findById(decoded.userId);
+      role = 'student';
+    }
 
     if (!user) {
       return res.status(401).json({ message: 'User not found' });
@@ -38,6 +47,7 @@ const auth = async (req, res, next) => {
     }
 
     req.user = user;
+    req.user.role = role; // Add role to user object
     next();
   } catch (error) {
     logger.error('Auth middleware error:', error);

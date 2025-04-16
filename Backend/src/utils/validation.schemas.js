@@ -1,21 +1,38 @@
 const Joi = require('joi');
 
-const registerSchema = Joi.object({
+// Base schema with common fields
+const baseSchema = {
   name: Joi.string().required().trim(),
   email: Joi.string().email().required().trim().lowercase(),
   phone: Joi.string().pattern(/^\+?[1-9]\d{9,14}$/).required(),
   password: Joi.string().min(6).required(),
-  role: Joi.string().valid('teacher', 'student').required(),
-  department: Joi.string().when('role', {
-    is: 'student',
-    then: Joi.required(),
-    otherwise: Joi.optional()
-  }),
-  prn: Joi.string().when('role', {
-    is: 'student',
-    then: Joi.string().pattern(/^\d{12}$/).required(),
-    otherwise: Joi.optional()
-  })
+  role: Joi.string().valid('teacher', 'student').required()
+};
+
+// Teacher-specific schema
+const teacherSchema = Joi.object({
+  ...baseSchema,
+  role: Joi.string().valid('teacher').required()
+});
+
+// Student-specific schema
+const studentSchema = Joi.object({
+  ...baseSchema,
+  role: Joi.string().valid('student').required(),
+  department: Joi.string().required(),
+  prn: Joi.string().pattern(/^\d{12}$/).required()
+});
+
+// Combined schema for registration
+const registerSchema = Joi.object(baseSchema).custom((value, helpers) => {
+  if (value.role === 'teacher') {
+    const { error } = teacherSchema.validate(value);
+    if (error) return helpers.error('any.invalid', { message: error.details[0].message });
+  } else if (value.role === 'student') {
+    const { error } = studentSchema.validate(value);
+    if (error) return helpers.error('any.invalid', { message: error.details[0].message });
+  }
+  return value;
 });
 
 const loginSchema = Joi.object({
